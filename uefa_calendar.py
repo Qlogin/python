@@ -15,10 +15,13 @@ from httplib import HTTPConnection
 
 import icalendar as ical
 
-cal = ical.Calendar()
+num_ends = {1 : 'st', 2 : 'nd',  3 :'rd'}
 
+cal = ical.Calendar()
 con = HTTPConnection('www.uefa.com')
 for stage in xrange(1, 9):
+    strstage = str(stage) + ends.get(stage, 'th')
+
     con.request('GET', '/uefachampionsleague/season=2016/matches/day={0}/index.html'.format(stage))
     res = con.getresponse()
     page = res.read()
@@ -35,6 +38,9 @@ for stage in xrange(1, 9):
         if dmatch is None:
             continue
         d = date(*map(int, dmatch.groups()))
+
+        full_summary = []
+        groups       = set([])
 
         tbody = tbl.find('tbody')
         for j in xrange(0, tbody.len):
@@ -73,16 +79,28 @@ for stage in xrange(1, 9):
                 elif classval == 'logo away-logo nob':
                     away['full'] = tds[k].find('a>img').attr('title')
 
+            summary = '{0} {4} {1} ({2} round, "{3}")'\
+                        .format(home['short'], away['short'], strstage, group, delim)
+            full_summary.append(summary)
+            groups.add(group)
+
             event = ical.Event()
-            event['uid'] = str(uuid.uuid1())
+            event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, home['short'] + away['short'] + str(d)))
             event['location'] = stad_name
-            event['summary'] = '{0} {4} {1} ({2}th round, "{3}")'\
-                               .format(home['short'], away['short'], stage, group, delim)
-            event['description'] = '{0} vs. {1} ({2}th round, Group {3}) at {4}'\
-                               .format(home['full'], away['full'], stage, group, stad_name)
+            event['summary']  = summary
+            event['description'] = '{0} vs. {1} ({2} round, Group {3}) at {4}'\
+                               .format(home['full'], away['full'], strstage), group, stad_name)
             event.add('dtstart', dt)
             event.add('dtend', dt + timedelta(hours=2))
             cal.add_component(event)
+
+        event = ical.Event()
+        event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, str(d)))
+        event['location'] = 'Europe'
+        event['summary']  = 'UEFA Champions League {0} round, Group '.format(strstage) + ','.join(sorted(groups))
+        event['description'] = '\n'.join(full_summary)
+        event.add('dtstart', d)
+        cal.add_component(event)
 
 with open('uefa.ics', 'wb') as f:
     f.write(cal.to_ical())
