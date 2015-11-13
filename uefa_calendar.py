@@ -16,11 +16,13 @@ from httplib import HTTPConnection
 import icalendar as ical
 
 num_ends = {1 : 'st', 2 : 'nd',  3 :'rd'}
+ball_symbol   = '\xe2\x9a\xbd'
+trophy_symbol = '\xf0\x9f\x8f\x86'
 
 cal = ical.Calendar()
 con = HTTPConnection('www.uefa.com')
 for stage in xrange(1, 9):
-    strstage = str(stage) + ends.get(stage, 'th')
+    strstage = str(stage) + num_ends.get(stage, 'th')
 
     con.request('GET', '/uefachampionsleague/season=2016/matches/day={0}/index.html'.format(stage))
     res = con.getresponse()
@@ -87,9 +89,9 @@ for stage in xrange(1, 9):
             event = ical.Event()
             event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, home['short'] + away['short'] + str(d)))
             event['location'] = stad_name
-            event['summary']  = summary
+            event['summary']  = ball_symbol + ' ' + summary
             event['description'] = '{0} vs. {1} ({2} round, Group {3}) at {4}'\
-                               .format(home['full'], away['full'], strstage), group, stad_name)
+                               .format(home['full'], away['full'], strstage, group, stad_name)
             event.add('dtstart', dt)
             event.add('dtend', dt + timedelta(hours=2))
             cal.add_component(event)
@@ -97,7 +99,7 @@ for stage in xrange(1, 9):
         event = ical.Event()
         event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, str(d)))
         event['location'] = 'Europe'
-        event['summary']  = 'UEFA Champions League {0} round, Group '.format(strstage) + ','.join(sorted(groups))
+        event['summary']  = trophy_symbol + ' UEFA Champions League {0} round, Group '.format(strstage) + ','.join(sorted(groups))
         event['description'] = '\n'.join(full_summary)
         event.add('dtstart', d)
         cal.add_component(event)
