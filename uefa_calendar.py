@@ -19,14 +19,25 @@ num_ends = {1 : 'st', 2 : 'nd',  3 :'rd'}
 ball_symbol   = '\xe2\x9a\xbd'
 trophy_symbol = '\xf0\x9f\x8f\x86'
 
-def add_group_events(cal, tournament):
-    con = HTTPConnection('www.uefa.com')
-    for stage in xrange(1, 7):
+class uefa_site_exporter:
+    def __init__(self, tournament):
+        self.tournament = tournament
+        self.tourn_url = tournament.lower().replace(' ', '')
+        self.con = HTTPConnection('www.uefa.com')
+
+    def add_group_events(self, cal):
+        for stage in xrange(1, 7):
+            self.add_stage_events(cal, stage, None)
+
+    def add_stage_events(self, cal, stage, session):
         strstage = str(stage) + num_ends.get(stage, 'th')
 
-        tourn_url = tournament.lower().replace(' ', '')
-        con.request('GET', '/{0}/season=2016/matches/day={1}/index.html'.format(tourn_url, stage))
-        res = con.getresponse()
+        url = '/{0}/season=2016/matches/day={1}'.format(self.tourn_url, stage)
+        if not session is None:
+            url += '/session={0}'.format(session)
+
+        self.con.request('GET', url + '/index.html')
+        res = self.con.getresponse()
         page = res.read()
 
         dom = htmldom.HtmlDom()
@@ -100,8 +111,8 @@ def add_group_events(cal, tournament):
             event = ical.Event()
             event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, str(d)))
             event['location'] = 'Europe'
-            event['summary'] = trophy_symbol + ' {0} {1} round'.format(tournament, strstage)
-            event['summary'] = trophy_symbol + ' {0} {1} round, Group '.format(tournament, strstage)\
+            event['summary'] = trophy_symbol + ' {0} {1} round'.format(self.tournament, strstage)
+            event['summary'] = trophy_symbol + ' {0} {1} round, Group '.format(self.tournament, strstage)\
                              + ','.join(sorted(groups))
             event['description'] = '\n'.join(full_summary)
             event.add('dtstart', d)
@@ -109,53 +120,69 @@ def add_group_events(cal, tournament):
 
 def add_playoff_event(cal, tourn, rnd, rnd_full, sleg, sses, d):
     event = ical.Event()
-    event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, str(dt)))
+    event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, str(d)))
     event['location'] = 'Europe'
     event['description'] = '{0}, {1} leg, {2} session'.format(rnd_full, sleg, sses)
     event['description'] = '{0}, {1} leg'.format(rnd_full, sleg)
     event.add('dtstart', d)
     cal.add_component(event)
 
-#tournament = 'UEFA Champions League'
-tournament = 'UEFA Europa League'
+# tournament = 'UEFA Champions League'
+# tournament = 'UEFA Europa League'
 
-cal = ical.Calendar()
-add_group_events(cal, tournament)
+def export_calendar(filename, tournament):
+    cal = ical.Calendar()
 
-# No information about matches on site until draw
-if tournament == 'UEFA Champions League':
-    schedule = [{'round' : 'R16',
-                 'round_full' : 'Round of 16',
-                 'legs' : [[(16, 2), (17, 2), (23, 2), (24, 2)],
-                            [(8, 3), (9, 3), (15, 3), (16, 3)]]},
-                {'round' : 'QF',
-                 'round_full' : 'Quarter-final',
-                 'legs' : [[(5, 4), (6, 4)], [(12, 4), (13, 4)]]},
-                {'round' : 'Semi-final',
-                 'round_full' : 'Semi-final',
-                 'legs' : [[(26, 4), (27, 4)], [(3, 5), (4, 5)]]}]
-else:
-    schedule = [{'round' : 'R32',
-                 'round_full' : 'Round of 32',
-                 'legs' : [[(18, 2)], [(25, 3)]]},
-                {'round' : 'R16',
-                 'round_full' : 'Round of 16',
-                 'legs' : [[(10, 3)], [(17, 3)]]},
-                {'round' : 'QF',
-                 'round_full' : 'Quarter-final',
-                 'legs' : [[(7, 4)], [(14, 4)]]},
-                {'round' : 'Semi-final',
-                 'round_full' : 'Semi-final',
-                 'legs' : [[(28, 4)], [(5, 5)]]}]
+    exporter = uefa_site_exporter(tournament)
+    exporter.add_group_events(cal)
 
-for rnd in schedule:
-    name = rnd['round']
-    full = rnd['round_full']
-    for nleg, leg in enumerate(rnd['legs'], 1):
-        sleg = str(nleg) + num_ends.get(nleg, 'th')
-        for ses, dt in enumerate(leg, 1):
-            sses = str(ses) + num_ends.get(ses, 'th')
-            add_playoff_event(cal, tournament, name, full, sleg, sses, date(2016, dt[1], dt[0]))
+    # No information about matches on site until draw
+    if tournament == 'UEFA Champions League':
+        schedule = [{'round' : 'R16',
+                     'round_full' : 'Round of 16',
+                     'legs' : [[(16, 2), (17, 2), (23, 2), (24, 2)],
+                                [(8, 3), (9, 3), (15, 3), (16, 3)]]},
+                    {'round' : 'QF',
+                     'round_full' : 'Quarter-final',
+                     'legs' : [[(5, 4), (6, 4)], [(12, 4), (13, 4)]]},
+                    {'round' : 'Semi-final',
+                     'round_full' : 'Semi-final',
+                     'legs' : [[(26, 4), (27, 4)], [(3, 5), (4, 5)]]}]
+    elif tournament == 'UEFA Europa League':
+        schedule = [{'round' : 'R32',
+                     'round_full' : 'Round of 32',
+                     'legs' : [[(18, 2)], [(25, 3)]]},
+                    {'round' : 'R16',
+                     'round_full' : 'Round of 16',
+                     'legs' : [[(10, 3)], [(17, 3)]]},
+                    {'round' : 'QF',
+                     'round_full' : 'Quarter-final',
+                     'legs' : [[(7, 4)], [(14, 4)]]},
+                    {'round' : 'Semi-final',
+                     'round_full' : 'Semi-final',
+                     'legs' : [[(28, 4)], [(5, 5)]]}]
 
-with open(r'Q:\europa_league.ics', 'wb') as f:
-    f.write(cal.to_ical())
+    for rnd in schedule:
+        name = rnd['round']
+        full = rnd['round_full']
+        for nleg, leg in enumerate(rnd['legs'], 1):
+            sleg = str(nleg) + num_ends.get(nleg, 'th')
+            for ses, dt in enumerate(leg, 1):
+                sses = str(ses) + num_ends.get(ses, 'th')
+                add_playoff_event(cal, tournament, name, full, sleg, sses, date(2016, dt[1], dt[0]))
+
+    with open(filename, 'wb') as f:
+        f.write(cal.to_ical())
+
+def update_score(filename, tournament, stage, session):
+    cal = ical.Calendar()
+
+    exporter = uefa_site_exporter(tournament)
+    exporter.add_stage_events(cal, stage, session)
+
+    with open(filename, 'wb') as f:
+        f.write(cal.to_ical())
+
+# Exmaple:
+#  export_calendar(r'Q:\europa_league.ics', 'UEFA Europa League')
+#  update_score(r'Q:\europa_league_5.ics', 'UEFA Europa League', 5, 1)
