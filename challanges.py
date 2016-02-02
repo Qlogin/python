@@ -5,72 +5,57 @@ Created on Fri Jul 24 13:56:12 2015
 @author: q-login
 """
 
-def LowerBound(num, n, i):
+import itertools
+
+###############################################################################
+
+def PermutationStep(num):
+    """
+    Return the next number greater than 'num' using the same digits.
+    For example: if num is 123 return 132, if it's 12453 return 12534.
+    If a number has no greater permutations, return -1 (ie. 999).
+    """
+    snum = bytearray(str(num))
+    return _PermutationIter(num, snum, 0)
+
+def _LowerBound(num, n, i):
     return num - num % 10 ** (n - i - 1)
 
-def UpperBound(num, n, i):
+def _UpperBound(num, n, i):
     p = 10 ** (n - i - 1)
     return num + p - (num % p)
 
-def PermutationIter(num, snum, n):
+def _PermutationIter(num, snum, n):
     res = -1
     if n < len(snum)-1:
-        res = PermutationIter(num, snum, n+1)
+        res = _PermutationIter(num, snum, n+1)
     for i in range(n+1, len(snum)):
         snum[n], snum[i] = snum[i], snum[n]
         new_num = int(str(snum))
-        if (UpperBound(new_num, len(snum), n) > num) and \
-           (LowerBound(new_num, len(snum), n) < res or res == -1):
+        if (_UpperBound(new_num, len(snum), n) > num) and \
+           (_LowerBound(new_num, len(snum), n) < res or res == -1):
                if new_num > num and (new_num < res or res == -1):
                    res = new_num
-               new_num = PermutationIter(num, snum, n+1)
+               new_num = _PermutationIter(num, snum, n+1)
                if new_num > num and (new_num < res or res == -1):
                    res = new_num
         snum[n], snum[i] = snum[i], snum[n]
     return res
 
-def PermutationStep(num):
-    snum = bytearray(str(num))
-    return PermutationIter(num, snum, 0)
-
-print PermutationStep(897654321)
-
-###########################################################
-
-def LookSaySequence(num):
-    res = []
-    for dig in str(num):
-        if len(res) == 0 or res[-1] != dig:
-            res += [1, dig]
-        else:
-            res[-2] += 1
-    return ''.join(map(str, res))
-
-def CoinDeterminer(num):
-    if num < 5:
-        return num
-    count = 1
-    while num - 11 > 0:
-        count += 1
-        num -= 11
-    if num % 2 == 0:
-        count += 1
-    return count
-
-###########################################################
-
-def GetMinutes(time):
-    h,m = map(int, time[:-2].split(':'))
-    tag = time[-2:]
-    if h == 12 and tag == 'AM':
-        h = 0
-    elif h != 12 and tag == 'PM':
-        h += 12
-    return h * 60 + m
+###############################################################################
 
 def MostFreeTime(strArr):
-    GetRanges = lambda x : map(GetMinutes, x.split('-'))
-    ranges = map(GetRanges, strArr)
+    """
+    Return the longest amount of free time available between the start of earliest
+    event and the end of your latest event in the format: hh:mm.
+    The input parameter 'strArr' will be filled with events that span from time X
+    to time Y in the day. The format of each event will be hh:mmAM/PM-hh:mmAM/PM.
+    For example, for inpute ["10:00AM-12:30PM","02:00PM-02:45PM","09:10AM-09:50AM"]
+    the output would therefore be 01:30 (with the earliest event in the day starting
+    at 09:10AM and the latest event ending at 02:45PM). The events may be out of order.
+    """
+    _GetRanges = lambda x : map(_GetMinutes, x.split('-'))
+    ranges = map(_GetRanges, strArr)
     ranges.sort(cmp = lambda x, y: x[0] < y[0])
 
     free = 0
@@ -81,67 +66,26 @@ def MostFreeTime(strArr):
 
     return '%02i:%02i' % (free // 60, free % 60)
 
-MostFreeTime(["12:15PM-02:00PM","09:00AM-12:11PM","02:02PM-04:00PM"])
+def _GetMinutes(time):
+    h,m = map(int, time[:-2].split(':'))
+    tag = time[-2:]
+    if h == 12 and tag == 'AM':
+        h = 0
+    elif h != 12 and tag == 'PM':
+        h += 12
+    return h * 60 + m
 
-###########################################################
-
-def CountSeq(num):
-   res = {}
-   prev = None
-   count = 0
-   for ch in str(num):
-      if ch == prev:
-         count += 1
-      else:
-         res[prev] = max(res.get(prev, 0), count)
-         prev = ch
-         count = 1
-   return res
-
-def TripleDouble(num1,num2):
-   count1 = CountSeq(num1)
-   count2 = CountSeq(num2)
-
-   for k in count1.iteritems():
-      if k[1] >= 3 and count2.get(k[0], 0) >= 2:
-         return 1
-
-   return 0
-
-# keep this function call here
-# to see how to enter arguments in Python scroll down
-#print TripleDouble(465555, 5579)
-
-def PatternChaser(s):
-    res_pat = ''
-    for i in range(0, len(s)):
-        c = s[i]
-        j = i + 1
-        j = s.find(c, j)
-        while j != -1:
-            pat = ''
-            for k in range(0, min(j - i, len(s) - j)):
-                if s[i + k] == s[j + k]:
-                    pat += s[i + k]
-                else:
-                    break
-            if len(pat) > len(res_pat):
-                res_pat = pat
-            j = s.find(c, j+1)
-    if len(res_pat) > 1:
-        return 'yes ' + res_pat
-    else:
-        return 'no null'
-
-#print PatternChaser( "sskfssbbb9bbb" )
-
-# Using the Python language, have the function KnightJumps(str) read str which will be a string consisting
-# of the location of a knight on a standard 8x8 chess board with no other pieces on the board. The structure
-# of str will be the following: "(x y)" which represents the position of the knight with x and y ranging from 1 to 8.
-#  Your program should determine the number of spaces the knight can move to from a given location. For example:
-# if str is "(4 5)" then your program should output 8 because the knight can move to 8 different spaces from position x=4 and y=5.
+###############################################################################
 
 def KnightJumps(s):
+    """
+    Determine the number of spaces the knight can move to from a given location.
+    Input parameters is a string consisting of knight location on a standard
+    8x8 chess board with no other pieces on the board. Str format is the following:
+    "(x y)" which represents the position of the knight with x and y ranging from 1 to 8.
+    For example: if str is "(4 5)" then your program should output 8 because
+    the knight can move to 8 different spaces from position x=4 and y=5.
+    """
     x, y = eval(s.replace(' ', ','))
     steps = [(-1, -2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
     board = xrange(1, 9)
@@ -152,7 +96,18 @@ def KnightJumps(s):
             num += 1
     return num
 
+###############################################################################
+
 def QuickKnight(s):
+    """
+    Determine the least amount of moves it would take the knight to go from its
+    position to another position. Input parameter is a string consisting of the
+    location of a knight on a standard 8x8 chess board with no other pieces
+    on the board and another space on the chess board. Format is the following:
+    "(x y)(a b)" where (x y) represents the position of the knight and (a b)
+    represents some other space on the chess board.
+    For example if str is "(2 3)(7 5)" then your program should output 3
+    """
     x0, y0 = eval(s[:5].replace(' ', ','))
     x1, y1 = eval(s[5:].replace(' ', ','))
 
@@ -174,12 +129,25 @@ def QuickKnight(s):
                 queue.append((dx, dy, n + 1))
     return None
 
+###############################################################################
 
-####################################################
+def QueenCheck(strArr):
+    """
+    """
+    x1, y1 = eval(strArr[0].replace(' ', ','))
+    x2, y2 = eval(strArr[1].replace(' ', ','))
 
-import itertools
+    if not _isCheck(x1, y1, x2, y2):
+        return -1
 
-def isCheck(x1, y1, x2, y2):
+    dirs = [0, 1, -1]
+    num = 0
+    for dx, dy in itertools.product(dirs, dirs):
+        if _isCheck(x1, y1, x2 + dx, y2 + dy) == False:
+            num += 1
+    return num
+
+def _isCheck(x1, y1, x2, y2):
     board = range(1, 9)
     if x2 not in board or y2 not in board:
         return None
@@ -188,40 +156,32 @@ def isCheck(x1, y1, x2, y2):
         return False
     return x1 == x2 or y1 == y2 or abs(x1 - x2) == abs(y1 - y2)
 
-def QueenCheck(strArr):
-    x1, y1 = eval(strArr[0].replace(' ', ','))
-    x2, y2 = eval(strArr[1].replace(' ', ','))
+###############################################################################
 
-    if not isCheck(x1, y1, x2, y2):
-        return -1
-
-    dirs = [0, 1, -1]
-    num = 0
-    for dx, dy in itertools.product(dirs, dirs):
-        if isCheck(x1, y1, x2 + dx, y2 + dy) == False:
-            num += 1
-    return num
-
-####
-# Using the Python language, have the function PolynomialExpansion(str) take str which will be a string
-# representing a polynomial containing only (+/-) integers, a letter, parenthesis, and the symbol "^",
-# and return it in expanded form. For example: if str is "(2x^2+4)(6x^3+3)", then the output should be
-# "12x^5+24x^3+6x^2+12". Both the input and output should contain no spaces. The input will only contain
-# one letter, such as "x", "y", "b", etc. There will only be four parenthesis in the input and your output
-# should contain no parenthesis. The output should be returned with the highest exponential element first
-#  down to the lowest.
-#
-# More generally, the form of str will be: ([+/-]{num}[{letter}[{^}[+/-]{num}]]...[[+/-]{num}]...)(copy)
-# where "[]" represents optional features, "{}" represents mandatory features, "num" represents integers and
-# "letter" represents letters such as "x".
-#
-# Hard challenges are worth 15 points and you are not timed for them. Use the Parameter Testing feature
-# in the box below to test your code with different arguments.
+def PolynomialExpansion(s):
+    """
+    Take a string representing a polynomial containing only (+/-) integers,
+    a letter, parenthesis, and the symbol "^", and return it in expanded form.
+    For example: if str is "(2x^2+4)(6x^3+3)", then the output should be
+    "12x^5+24x^3+6x^2+12". Both the input and output should contain no spaces.
+    The input will only contain one letter, such as "x", "y", "b", etc.
+    There will only be four parenthesis in the input and your output should
+    contain no parenthesis. The output should be returned with the highest
+    exponential element first down to the lowest.
+    """
+    subex = map(_PolyParse, s[1:-1].split(')('))
+    res = subex[0][0]
+    var = set([subex[0][1]])
+    for i in xrange(1, len(subex)):
+        res = _PolyProd(res, subex[i][0])
+        var |= set([subex[i][1]])
+    var -= set([None])
+    return _PolyString(res, var.pop() if len(var) > 0 else None)
 
 def _add(p, t, v):
     p[t] = p.get(t, 0) + v
 
-def PolyParse(s):
+def _PolyParse(s):
     poly  = {}
     terms = s.replace('-', '+-').replace('^+', '^')
     if terms[0] == '+':
@@ -245,14 +205,14 @@ def PolyParse(s):
         var.add(None)
     return poly, var.pop()
 
-def PolyProd(x, y):
+def _PolyProd(x, y):
     poly = {}
     for p1, k1 in x.iteritems():
         for p2, k2 in y.iteritems():
             _add(poly, p1 + p2, k1 * k2)
     return poly
 
-def PolyString(poly, var):
+def _PolyString(poly, var):
     items = list(poly.iteritems())
     items.sort(key=lambda x: x[0], reverse=True)
     def _(x):
@@ -266,44 +226,11 @@ def PolyString(poly, var):
         return res
     return '+'.join(map(_, items)).replace('+-', '-')
 
-def PolynomialExpansion(s):
-    subex = map(PolyParse, s[1:-1].split(')('))
-    res = subex[0][0]
-    var = set([subex[0][1]])
-    for i in xrange(1, len(subex)):
-        res = PolyProd(res, subex[i][0])
-        var |= set([subex[i][1]])
-    var -= set([None])
-    return PolyString(res, var.pop() if len(var) > 0 else None)
-
-#print PolynomialExpansion("(1x^2+4)(-1)")
-
-###
-
-def checkRow(board, r, c, v):
-    for i in xrange(0, 9):
-        if i != c:
-            if board[r][i] == v:
-                return False
-    return True
-
-def checkColumn(board, r, c, v):
-    for i in xrange(0, 9):
-        if i != r:
-            if board[i][c] == v:
-                return False
-    return True
-
-def checkQuadrant(board, r, c, v):
-    count = 0
-    for i in xrange(3 * r, 3 * r + 3):
-        for j in xrange(3 * c, 3 * c + 3):
-            if board[i][j] == v:
-                count += 1
-    return count == 1
-
+###############################################################################
 
 def SudokuQuadrantChecker(strArr):
+    """
+    """
     board = [eval(i.replace('x', 'None')) for i in strArr]
     res = set()
 
@@ -314,9 +241,9 @@ def SudokuQuadrantChecker(strArr):
                 continue
             qr, qc = r // 3, c // 3
             qnum = 3 * qr + qc + 1
-            if not checkRow(board, r, c, v) or\
-               not checkColumn(board, r, c, v) or\
-               not checkQuadrant(board, qr, qc, v):
+            if not _checkRow(board, r, c, v) or\
+               not _checkColumn(board, r, c, v) or\
+               not _checkQuadrant(board, qr, qc, v):
                    res.add(qnum)
 
     if len(res) == 0:
@@ -324,11 +251,35 @@ def SudokuQuadrantChecker(strArr):
 
     return ','.join([str(i) for i in sorted(res)])
 
-###
+def _checkRow(board, r, c, v):
+    for i in xrange(0, 9):
+        if i != c:
+            if board[r][i] == v:
+                return False
+    return True
+
+def _checkColumn(board, r, c, v):
+    for i in xrange(0, 9):
+        if i != r:
+            if board[i][c] == v:
+                return False
+    return True
+
+def _checkQuadrant(board, r, c, v):
+    count = 0
+    for i in xrange(3 * r, 3 * r + 3):
+        for j in xrange(3 * c, 3 * c + 3):
+            if board[i][j] == v:
+                count += 1
+    return count == 1
+
+###############################################################################
 
 def OptimalAssignments(strArr):
+    """
+    """
     matrix = [eval(i) for i in strArr]
-    res  = [None] * len(matrix)
+    res  = []
     prev_cost = 0
 
     for i in xrange(0, len(matrix)):
@@ -347,9 +298,6 @@ def OptimalAssignments(strArr):
 
     return ''.join(['({0}-{1})'.format(x+1, y+1) for x, y in enumerate(res)])
 
-#print OptimalAssignments(["(1,1,4)","(5,2,1)","(1,5,2)"])
-
-
 ###
 # Using the Python language, have the function NoughtsDeterminer(strArr) take the strArr parameter
 # being passed which will be an array of size eleven. The array will take the shape of a Tic-tac-toe
@@ -364,7 +312,7 @@ def OptimalAssignments(strArr):
 
 #import itertools
 
-def checkPosition(board, i, j):
+def _checkPosition(board, i, j):
     # Check row
     if board[i][(j+1) % 3] == board[i][(j-1) % 3] != '-':
         return True
@@ -382,24 +330,58 @@ def checkPosition(board, i, j):
 def NoughtsDeterminer(strArr):
     board = ''.join(strArr).split("<>")
     for i, j in itertools.product(xrange(3), xrange(3)):
-        if board[i][j] == '-' and checkPosition(board, i, j):
+        if board[i][j] == '-' and _checkPosition(board, i, j):
             return i * 4 + j
     return None
 
-#print NoughtsDeterminer(["X","O","-","<>","-","O","-","<>","O","X","-"])
+###############################################################################
 
-# Using the Python language, have the function IntersectingLines(strArr) take strArr which will be
-# an array of 4 coordinates in the form: (x,y). Your program should take these points where the first
-# 2 form a line and the last 2 form a line, and determine whether the lines intersect, and if they do,
-# at what point. For example: if strArr is ["(3,0)","(1,4)","(0,-3)","(2,3)"], then the line created
-# by (3,0) and (1,4) and the line created by (0,-3) (2,3) intersect at (9/5,12/5). Your output should
-# therefore be the 2 points in fraction form in the following format: (9/5,12/5). If there is no
-# denominator for the resulting points, then the output should just be the integers like so: (12,3).
-# If any of the resulting points is negative, add the negative sign to the numerator like so: (-491/63,-491/67).
-# If there is no intersection, your output should return the string "no intersection". The input points
-# and the resulting points can be positive or negative integers.
+def IntersectingLines(strArr):
+    """
+    Determine whether the segments intersect, and if they do, at what point.
+    Input parameter is an array of 4 integer coordinates in the form: (x,y).
+    The first 2 point form first segment and the last 2 form another one.
+    Output is the point in fraction form in the following format: (9/5,12/5).
+    If there is no denominator for the resulting points, then the output
+    should just be the integers like so: (12,3).
+    If any of the resulting points is negative, the negative sign added to the
+    numerator like so: (-491/63,-491/67). If there is no intersection, function
+    return the string "no intersection".
+    """
+    no_int = "no intersection"
+    l1 = map(point.from_str, strArr[:2])
+    l2 = map(point.from_str, strArr[2:])
 
-def fraction(x, y):
+    box1 = box(*l1)
+    box2 = box(*l2)
+
+    if not box1.intersects(box2):
+        return no_int
+
+    n1 = (l1[1] - l1[0]).normal()
+    c1 = n1 * l1[0]
+    n2 = (l2[1] - l2[0]).normal()
+    c2 = n2 * l2[0]
+
+    det = n1.x * n2.y - n1.y * n2.x
+    if det == 0:
+        return no_int
+
+    x = c1 * n2.y - n1.y * c2
+    y = n1.x * c2 - c1 * n2.x
+
+    if det < 0:
+        det = -det
+        x = -x
+        y = -y
+
+    p = point(x / float(det), y / float(det))
+    if not box1.contains(p) or not box2.contains(p):
+        return no_int
+
+    return '({0},{1})'.format(_fraction(x, det), _fraction(y, det))
+
+def _fraction(x, y):
     def gcd(a, b):
         while b != 0:
             a, b = b, a % b
@@ -438,46 +420,15 @@ class box:
         self.hi = point(max(arg, key=lambda p: p.x).x, max(arg, key=lambda p: p.y).y)
     def contains(self, p):
         return self.lo.x <= p.x <= self.hi.x and self.lo.y <= p.y <= self.hi.y
+    def intersects(self, other):
+        return self.lo.x < other.hi.x and self.hi.x > other.lo.x and\
+               self.lo.y < other.hi.y and self.hi.y > other.lo.y
 
-def IntersectingLines(strArr):
-    no_int = "no intersection"
-    l1 = map(point.from_str, strArr[:2])
-    l2 = map(point.from_str, strArr[2:])
-
-    box1 = box(*l1)
-    box2 = box(*l2)
-
-    if box1.lo.x > box2.hi.x or box1.hi.x < box2.lo.x or box1.lo.y > box2.hi.y or box1.hi.y < box2.lo.y:
-        return no_int
-
-    n1 = (l1[1] - l1[0]).normal()
-    c1 = n1 * l1[0]
-    n2 = (l2[1] - l2[0]).normal()
-    c2 = n2 * l2[0]
-
-    det = n1.x * n2.y - n1.y * n2.x
-    if det == 0:
-        return no_int
-
-    x = c1 * n2.y - n1.y * c2
-    y = n1.x * c2 - c1 * n2.x
-
-    if det < 0:
-        det = -det
-        x = -x
-        y = -y
-
-    p = point(x / float(det), y / float(det))
-    if not box1.contains(p) or not box2.contains(p):
-        return no_int
-
-    return '({0},{1})'.format(fraction(x, det), fraction(y, det))
-
-#print IntersectingLines(["(-3,0)","(-1,4)","(0,-3)","(-2,3)"])
-#print IntersectingLines(["(9,-2)","(-2,9)","(3,4)","(10,11)"])
-#print IntersectingLines(["(0,15)","(3,-12)","(2,1)","(13,7)"])
+###############################################################################
 
 def RomanNumeralReduction(s):
+    """
+    """
     romans = [('I', 1), ('V', 5), ('X', 10), ('L', 50), ('C', 100), ('D', 500), ('M', 1000)]
     rommap = dict(romans)
     val = sum([rommap[ch] for ch in s])
@@ -491,26 +442,11 @@ def RomanNumeralReduction(s):
             cur -= 1
     return out
 
-#print RomanNumeralReduction("XXXVVIIIIIIIIII")
-
-import math
-
-def SquareFigures(num):
-    if num == 1:
-        return 0
-
-    value = 10 ** (num - 1)
-    return int(round(math.sqrt(value)))
-
-# keep this function call here
-# to see how to enter arguments in Python scroll down
-#print SquareFigures(6)
-#print SquareFigures(7)
-#print SquareFigures(8)
-#print SquareFigures(10)
-
+###############################################################################
 
 def KaprekarsConstant(num):
+    """
+    """
     count = 0
     while num != 6174:
         snum = '{:04d}'.format(num)
@@ -518,31 +454,37 @@ def KaprekarsConstant(num):
         count += 1
     return count
 
-#print KaprekarsConstant(2111)
-
-def next_sample(idx, i, n):
-    idx[i] += 1
-    if idx[i] == n and i != 0:
-        idx[i] = next_sample(idx, i-1, n-1) + 1
-    return idx[i]
+###############################################################################
 
 def ParallelSums(arr):
+    """
+    """
     arr.sort()
-    s = sum(arr) // 2 # TODO: check that Sum is even
+    s = sum(arr)
+    if s % 2 != 0:
+        return "-1"
+    s = s // 2
     num = len(arr) // 2
+
+    def _next_sample(idx, i, n):
+        idx[i] += 1
+        if idx[i] == n and i != 0:
+            idx[i] = _next_sample(idx, i-1, n-1) + 1
+        return idx[i]
 
     idx = range(0, num)
     while idx[0] != num + 1:
         if s == sum(map(arr.__getitem__, idx)):
             idx += [x for x in xrange(0, 2 * num) if x not in idx]
             return ','.join(map(lambda x: str(arr[x]), idx))
-        next_sample(idx, num - 1, 2 * num)
+        _next_sample(idx, num - 1, 2 * num)
     return "-1"
 
-print ParallelSums([1, 2, 3, 4, 5, 6])
-print ParallelSums([1, 2, 1, 5])
+###############################################################################
 
 def ArrayCouples(arr):
+    """
+    """
     out = []
     pairs = [(arr[i], arr[i+1]) for i in xrange(0, len(arr), 2)]
     while len(pairs) != 0:
@@ -554,34 +496,38 @@ def ArrayCouples(arr):
 
     return "yes" if len(out) == 0 else ','.join(map(str, out))
 
-#print ArrayCouples([1, 2, 2, 1, 3, 3])
-
-def combination(k, n):
-    if n - k < k:
-        k = n - k
-    a, b = 1, 1
-    while k > 0:
-        a *= n - k + 1
-        b *= k
-        k -= 1
-    return a // b
-
-def factor(n):
-    f = 1
-    while n > 1:
-        f, n = n * f, n - 1
-    return f
+###############################################################################
 
 def MatchingCouples(arr):
+    """
+    """
+    def _combination(k, n):
+        if n - k < k:
+            k = n - k
+        a, b = 1, 1
+        while k > 0:
+            a *= n - k + 1
+            b *= k
+            k -= 1
+        return a // b
+
+    def _factor(n):
+        f = 1
+        while n > 1:
+            f, n = n * f, n - 1
+        return f
+
     b, g, n = arr
     n //= 2
-    bc = combination(n, b)
-    gc = combination(n, g)
-    return bc * gc * factor(n)
+    bc = _combination(n, b)
+    gc = _combination(n, g)
+    return bc * gc * _factor(n)
 
-#print MatchingCouples([5, 10, 4])
+###############################################################################
 
 def ChessboardTraveling(s):
+    """
+    """
     (x, y), (a, b) = map(eval, [x.replace(' ', ',') for x in s[1:-1].split(')(')])
     k, n = a - x, b - y
     if n > k:
@@ -595,9 +541,7 @@ def ChessboardTraveling(s):
         k -= 1
     return prev[n]
 
-#print ChessboardTraveling('(1 1)(5 5)')
-
-###
+###############################################################################
 
 def SimpleSAT(expr):
     letters = set(filter(str.isalpha, expr)) # get all unique variables
@@ -611,21 +555,11 @@ def SimpleSAT(expr):
             return "yes"
     return "no"
 
-#print SimpleSAT("(a&b&c)|~a")
-#print SimpleSAT("a&(b|c)&~b&~c")
-
-def StepWalking(num):
-    # The answer is fibonacci numbers
-    x, y = 0, 1
-    for i in xrange(0, num):
-        x, y = y, x + y
-    return y
-
-#print StepWalking(1)
-#print StepWalking(3)
-#print StepWalking(5)
+###############################################################################
 
 def ArrayJumping(arr):
+    """
+    """
     n = len(arr)
     maxe = max(xrange(n), key=lambda i: arr[i])
     queue = [maxe]
@@ -641,6 +575,34 @@ def ArrayJumping(arr):
                 path[nxt] = path[cur] + 1
     return -1
 
-#print ArrayJumping([1,2,3,4,2])
-#print ArrayJumping([1,7,1,1,1,1])
-#print ArrayJumping([1, 2, 3, 2, 1])
+###############################################################################
+
+challange_tests = {
+    PermutationStep     : [123, 897654321, 444444],
+    MostFreeTime        : [["12:15PM-02:00PM","09:00AM-12:11PM","02:02PM-04:00PM"], ],
+    PolynomialExpansion : ["(1x^2+4)(-1)", ],
+    OptimalAssignments  : [["(1,1,4)","(5,2,1)","(1,5,2)"], ],
+    NoughtsDeterminer   : [["X","O","-","<>","-","O","-","<>","O","X","-"], ],
+    IntersectingLines   : [["(-3,0)","(-1,4)","(0,-3)","(-2,3)"],
+                           ["(9,-2)","(-2,9)","(3,4)","(10,11)"],
+                           ["(0,15)","(3,-12)","(2,1)","(13,7)"], ],
+    RomanNumeralReduction : ["XXXVVIIIIIIIIII", ],
+    KaprekarsConstant   : [2111, ],
+    ParallelSums        : [[1, 2, 3, 4, 5, 6], [1, 2, 1, 5], ],
+    ArrayCouples        : [[1, 2, 2, 1, 3, 3], ],
+    MatchingCouples     : [[5, 10, 4], ],
+    ChessboardTraveling : ['(1 1)(5 5)', ],
+    SimpleSAT           : ["(a&b&c)|~a", "a&(b|c)&~b&~c"],
+    ArrayJumping        : [[1, 2, 3, 4, 2],
+                           [1, 7, 1, 1, 1, 1],
+                           [1, 2, 3, 2, 1], ],
+}
+
+named_challanges = dict((f.__name__, f) for f in challange_tests)
+
+def test_all():
+    for f, tests in challange_tests.iteritems():
+        print(f.__name__)
+        for t in tests:
+            print('  In: {}'.format(t))
+            print('  Out: {}'.format(f(t)))
