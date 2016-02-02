@@ -5,6 +5,7 @@ Created on Fri Jul 24 13:56:12 2015
 @author: q-login
 """
 
+import re
 import itertools
 
 ###############################################################################
@@ -577,6 +578,250 @@ def ArrayJumping(arr):
 
 ###############################################################################
 
+def GasStation(strArr):
+    """
+    """
+    impossible = "impossible"
+    if int(strArr[0]) != len(strArr) - 1:
+        return impossible
+
+    gas = [int.__sub__(*map(int, x.split(':'))) for x in strArr[1:]]
+    for i in xrange(0, len(gas)):
+        if _CheckStation(i, gas):
+            return i + 1;
+    return impossible
+
+def _CheckStation(i, gas):
+    tank = 0
+    for j in xrange(i, i + len(gas)):
+        tank += gas[j % len(gas)]
+        if tank < 0:
+            return False
+    return True
+
+###############################################################################
+
+def WeightedPath(arr):
+    """
+    """
+    V, E, inf = _GetGraph(arr)
+    dist = {V[0] : 0}
+    path = {V[0] : None}
+    reduced = True
+    while reduced:
+        reduced = False
+        for u, v, w in E:
+            if u in dist:
+                if dist.get(v, inf) > dist[u] + w:
+                    dist[v] = dist[u] + w
+                    path[v] = u
+                    reduced = True
+    if V[-1] in path:
+        return _GetPath(V[-1], path)
+    return -1
+
+def _GetGraph(arr):
+    n = int(arr[0])
+    V = arr[1:n+1]
+    E = []
+    maxw = 0
+    for i in range(n + 1, len(arr)):
+        a, b, w = arr[i].split('|')
+        w = int(w)
+        E.append((a, b, w))
+        E.append((b, a, w))
+        maxw += max(0, w)
+    return V, E, maxw + 1
+
+def _GetPath(node, path):
+    res = ''
+    while not node is None:
+        res = node + '-' + res
+        node = path[node]
+    return res[:-1]
+
+###############################################################################
+
+def HamiltonianPath(strArr):
+    """
+    """
+    graph, path = _GetGraphPath(strArr)
+    prev = path.pop(0)
+    for x in path:
+        if not x in graph[prev]:
+            return prev
+        prev = x
+    return "yes"
+
+def _GetGraphPath(arr):
+    graph = dict((x, []) for x in arr[0][1:-1].split(','))
+    for x in arr[1][1:-1].split(','):
+        a, b = x.split('-')
+        graph[a].append(b)
+        graph[b].append(a)
+    path = arr[2][1:-1].split(',')
+    return graph, path
+
+###############################################################################
+
+def FarthestNodes(strArr):
+    """
+    """
+    graph = {}
+    for edge in strArr:
+        x, y = edge.split('-')
+        graph.setdefault(x, []).append(y)
+        graph.setdefault(y, []).append(x)
+
+    a, n = _FarNode(graph, graph.keys()[0])
+    b, n = _FarNode(graph, a)
+    return n
+
+def _FarNode(graph, node):
+    queue = [(node, 0)]
+    processed = set([])
+    while len(queue) > 0:
+        cur, n = queue.pop(0)
+        processed.add(cur)
+        for x in graph[cur]:
+            if not x in processed:
+                queue.append((x, n + 1))
+    return cur, n
+
+###############################################################################
+
+def SwitchSort(arr):
+    """
+    """
+    count = 0
+    target = range(1, len(arr) + 1)
+    while arr != target:
+        for i in xrange(0, len(arr)):
+            if arr[i] != i + 1:
+                nxt = (i + arr[i]) % len(arr)
+                prv = (i - arr[i]) % len(arr)
+                if arr[i] == nxt + 1:
+                    arr[i], arr[nxt] = arr[nxt], arr[i]
+                    count += 1
+                    break
+                elif arr[i] == prv + 1:
+                    arr[i], arr[prv] = arr[prv], arr[i]
+                    count += 1
+                    break
+    return count
+
+# keep this function call here
+###############################################################################
+
+def NimWinner(arr):
+    """
+    """
+    xor = reduce(lambda x, y: x ^ y, arr)
+    return 1 if xor != 0 else 2
+
+###############################################################################
+
+def ConnectFourWinner(strArr):
+    """
+    """
+    turn  = strArr[0]
+    table = [x[1:-1].split(',') for x in strArr[1:]]
+
+    w, h = len(table[0]), len(table)
+    for j in xrange(w):
+        for i in xrange(h):
+            if table[i][j] != 'x':
+                break
+            if i == h - 1 or table[i + 1][j] != 'x':
+                if _CheckTurn(turn, table, w, h, i, j):
+                    return "({0}x{1})".format(i + 1, j + 1)
+                break
+    return "none"
+
+def _CheckTurn(turn, table, w, h, i, j):
+    table[i][j] = turn
+
+    # Check horizontal
+    row = ''.join(table[i])
+    if row.count(turn * 4):
+        return True
+    # Check vertical
+    if i < 3:
+        col = ''.join(table[x][j] for x in xrange(h))
+        if col.count(turn * 4):
+            return True
+    # Check diagonal
+    s, e = min(i, j), min(h - i, w - j)
+    diag = ''.join(table[i + k][j + k] for k in xrange(-s, e))
+    if diag.count(turn * 4):
+        return True
+
+    s, e = min(h - 1 - i, j), min(i + 1, w - j)
+    diag = ''.join(table[i - k][j + k] for k in xrange(-s, e))
+    if diag.count(turn * 4):
+        return True
+
+    table[i][j] = 'x'
+    return False
+
+###############################################################################
+
+def SolveEnigma(enigma):
+    """
+    """
+    # 1. Match Regular Expression
+    lit   = r'(\w+)'
+    space = r'\s*'
+    ops   = r'[+\-*]'
+    pattern = ('A o A = A').replace('A', lit).replace('o', ops).replace(' ', space)
+    m = re.match('^{}$'.format(pattern), enigma)
+    if not m:
+        return
+
+    # 2. Get the set of used letters
+    assert len(m.groups()) == 3
+    var = set()
+    first = set()
+    for i in range(1, 4):
+        var.update(m.group(i))
+        first.update(m.group(i)[0])
+    var = list(var)
+
+    N = len(var)
+    if N > 10:
+        return
+
+    # 3. Iterate permutations
+    def _check(x):
+        solution = enigma.replace('=', '==')
+        for letter, value in zip(var, x):
+            if value == '0' and letter in first:
+                return None
+            solution = solution.replace(letter, value)
+        return solution if eval(solution) == True else None
+
+    for x in itertools.permutations(map(str, xrange(0, 10)), N):
+        solution = _check(x)
+        if solution:
+            yield solution.replace('==', '=')
+
+enigmas = [
+    'ODIN + ODIN = MNOGO',
+    'DVA * DVA = CETYRE',
+    'DVA * PYTI = DESYTI',
+    'DRAMA + DRAMA = TEATR',
+    'LIRIK + LIRIK = FIZIKA',
+]
+
+def test_enigmas():
+    for e in enigmas:
+        print('-' * len(e))
+        print(e)
+        for s in SolveEnigma(e):
+            print(s)
+
+###############################################################################
+
 challange_tests = {
     PermutationStep     : [123, 897654321, 444444],
     MostFreeTime        : [["12:15PM-02:00PM","09:00AM-12:11PM","02:02PM-04:00PM"], ],
@@ -596,6 +841,24 @@ challange_tests = {
     ArrayJumping        : [[1, 2, 3, 4, 2],
                            [1, 7, 1, 1, 1, 1],
                            [1, 2, 3, 2, 1], ],
+    GasStation          : [["4","3:1","2:2","1:2","0:1"],
+                           ["4","1:1","2:2","1:2","0:1"],
+                           ["4","0:1","2:2","1:2","3:1"], ],
+    WeightedPath        : [["4","A","B","C","D", "A|B|2", "C|B|11", "C|D|3", "B|D|2"],
+                           ["4","x","y","z","w","x|y|2","y|z|14", "z|y|31"], ],
+    HamiltonianPath     : [["(A,B,C,D)","(A-B,A-D,B-D,A-C)","(C,A,D,B)"],
+                           ["(A,B,C,D)","(A-B,A-D,B-D,A-C)","(D,A,B,C)"],
+                           ["(A,B,C)","(B-A,C-B)","(C,B,A)"],
+                           ["(X,Y,Z,Q)","(X-Y,Y-Q,Y-Z)","(Z,Y,Q,X)"],],
+    FarthestNodes       : [["b-a", "a-e", "a-c", "e-f", "c-d"], ],
+    SwitchSort          : [[2, 5, 4, 1, 3], ],
+    NimWinner           : [[1, 2, 3], ],
+    ConnectFourWinner   : [["R","(x,x,x,x,x,x,x)",
+                                "(x,x,x,x,x,x,x)",
+                                "(x,x,x,x,x,x,x)",
+                                "(x,x,x,R,R,Y,x)",
+                                "(x,x,x,R,Y,R,x)",
+                                "(x,x,x,R,Y,Y,Y)"], ],
 }
 
 named_challanges = dict((f.__name__, f) for f in challange_tests)
