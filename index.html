@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Python Scripts by Qlogin</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Python Scripts</h1>
+        <p class="header">Python script tools &amp; utilities for various usage.</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/Qlogin/python/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/Qlogin/python/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/Qlogin/python">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/Qlogin">Qlogin</a></p>
+
+
+      </header>
+      <section>
+        <p>Python experimental area. Quick prototypes. Programming assignments &amp; coding challenges.</p>
+
+<h2>
+<a id="uefacom-site-parsing" class="anchor" href="#uefacom-site-parsing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>'UEFA.com' site parsing</h2>
+
+<p>Script for parsing '<a href="http://www.uefa.com/">uefa.com</a>' site to obtain cool web-calendars with UEFA tournament events.
+Those calendars maintan two types of events:</p>
+
+<ul>
+<li>"whole day" event for each tournament stage with list of matches</li>
+<li>separate event for each match with information about participants (clubs), stadium, scores (for completed games).</li>
+</ul>
+
+<p>Event titles contain symbols <g-emoji alias="soccer" fallback-src="https://assets-cdn.github.com/images/icons/emoji/unicode/26bd.png">⚽</g-emoji> &amp; <g-emoji alias="trophy" fallback-src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f3c6.png">🏆</g-emoji>, so you can easily identify what the event is.
+Also, description of each match contains logos of playing teams.</p>
+
+<p>Script: <em>uefa_calendar.py</em> <a href="https://raw.githubusercontent.com/Qlogin/python/master/uefa_calendar.py">Download</a></p>
+
+<p>Usage:</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-k">import</span> uefa_calendar <span class="pl-k">as</span> uefa
+
+uefa.export_calendar(<span class="pl-sr"><span class="pl-k">r</span><span class="pl-pds">'</span>champions_league<span class="pl-c1">.</span>ics<span class="pl-pds">'</span></span>, uefa.<span class="pl-c1">CHAMPIONS_LEAGUE</span>)
+uefa.update_score(<span class="pl-sr"><span class="pl-k">r</span><span class="pl-pds">'</span>europa_round6<span class="pl-c1">.</span>ics<span class="pl-pds">'</span></span>, uefa.<span class="pl-c1">EUROPA_LEAGUE</span>, <span class="pl-c1">6</span>, <span class="pl-c1">None</span>)</pre></div>
+
+<p>Example:</p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
