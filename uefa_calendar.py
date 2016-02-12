@@ -44,10 +44,10 @@ num_ends = {1 : 'st', 2 : 'nd',  3 :'rd'}
 ball_symbol   = '\xe2\x9a\xbd'
 trophy_symbol = '\xf0\x9f\x8f\x86'
 
-class uefa_site_exporter:
-    CHAMPIONS_LEAGUE = 'UEFA Champions League'
-    EUROPA_LEAGUE = 'UEFA Europa League'
+CHAMPIONS_LEAGUE = 'UEFA Champions League'
+EUROPA_LEAGUE = 'UEFA Europa League'
 
+class uefa_site_exporter:
     def __init__(self, tournament):
         self.tournament = tournament
         self.tourn_url = tournament.lower().replace(' ', '')
@@ -136,11 +136,15 @@ class uefa_site_exporter:
                     if classval == 'r home nob':
                         game['home_short'] = tds[k].find('a').text()
                     elif classval == 'logo home-logo nob':
-                        game['home_full'] = tds[k].find('a>img').attr('title')
+                        img = tds[k].find('a>img');
+                        game['home_full'] = img.attr('title')
+                        game['home_logo'] = img.attr('src').replace('64x64', '32x32')
                     elif classval == 'l away nob':
                         game['away_short'] = tds[k].find('a').text()
                     elif classval == 'logo away-logo nob':
-                        game['away_full'] = tds[k].find('a>img').attr('title')
+                        img = tds[k].find('a>img');
+                        game['away_full'] = img.attr('title')
+                        game['away_logo'] = img.attr('src').replace('64x64', '32x32')
 
                 summary = '{0} {3} {1} ({2})'\
                             .format(game['home_short'], game['away_short'], game['name'], delim)
@@ -152,8 +156,9 @@ class uefa_site_exporter:
                 event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, game['home_short'] + game['away_short'] + str(d)))
                 event['location'] = stad_name
                 event['summary']  = ball_symbol + ' ' + summary
-                event['description'] = '{0} vs. {1} ({2}) at {3}'\
-                                   .format(game['home_full'], game['away_full'], game['descr'], stad_name)
+                event['description'] = '{0} vs. {1} ({2}) at {3}\n<img src="{4}"> <img src="{5}">'\
+                                     .format(game['home_full'], game['away_full'], game['descr'],
+                                             stad_name, game['home_logo'], game['away_logo'])
                 event.add('dtstart', dt)
                 event.add('dtend', dt + timedelta(hours=2))
                 cal.add_component(event)
@@ -173,24 +178,14 @@ class uefa_site_exporter:
                 event.add('dtstart', d)
                 cal.add_component(event)
 
-def add_playoff_event(cal, tourn, rnd, rnd_full, sleg, sses, d):
-    event = ical.Event()
-    event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, str(d)))
-    event['location'] = 'Europe'
-    event['description'] = '{0}, {1} leg, {2} session'.format(rnd_full, sleg, sses)
-    event['description'] = '{0}, {1} leg'.format(rnd_full, sleg)
-    event.add('dtstart', d)
-    cal.add_component(event)
-
-# tournament = 'UEFA Champions League'
-# tournament = 'UEFA Europa League'
-
-def export_calendar(filename, tournament, byhand=False):
+def export_calendar(filename, tournament, group=True, playoff=True, byhand=False):
     cal = ical.Calendar()
 
     exporter = uefa_site_exporter(tournament)
-    #exporter.add_group_events(cal)
-    exporter.add_playoff_events(cal)
+    if group:
+        exporter.add_group_events(cal)
+    if playoff:
+        exporter.add_playoff_events(cal)
 
     # No information about matches on site until draw
     if byhand:
@@ -219,6 +214,15 @@ def export_calendar(filename, tournament, byhand=False):
                          'round_full' : 'Semi-final',
                          'legs' : [[(28, 4)], [(5, 5)]]}]
 
+        def _add_playoff_event(rnd, rnd_full, sleg, sses, d):
+            event = ical.Event()
+            event['uid'] = str(uuid.uuid3(uuid.NAMESPACE_OID, str(d)))
+            event['location'] = 'Europe'
+            event['description'] = '{0}, {1} leg, {2} session'.format(rnd_full, sleg, sses)
+            #event['description'] = '{0}, {1} leg'.format(rnd_full, sleg)
+            event.add('dtstart', d)
+            cal.add_component(event)
+
         for rnd in schedule:
             name = rnd['round']
             full = rnd['round_full']
@@ -226,7 +230,7 @@ def export_calendar(filename, tournament, byhand=False):
                 sleg = str(nleg) + num_ends.get(nleg, 'th')
                 for ses, dt in enumerate(leg, 1):
                     sses = str(ses) + num_ends.get(ses, 'th')
-                    add_playoff_event(cal, tournament, name, full, sleg, sses, date(2016, dt[1], dt[0]))
+                    _add_playoff_event(name, full, sleg, sses, date(2016, dt[1], dt[0]))
 
     with open(filename, 'wb') as f:
         f.write(cal.to_ical())
@@ -241,6 +245,7 @@ def update_score(filename, tournament, stage, session):
         f.write(cal.to_ical())
 
 # Exmaple:
-export_calendar(r'Q:\champions_league.ics', uefa_site_exporter.CHAMPIONS_LEAGUE)
-#update_score(r'Q:\el_6_1.ics', 'UEFA Europa League', 6, 1)
-#update_score(r'Q:\lc_6_2.ics', 'UEFA Champions League', 6, 2)
+#import uefa_calendar as uefa
+#uefa.export_calendar(r'Q:\champions_league.ics', uefa.CHAMPIONS_LEAGUE)
+#uefa.update_score(r'Q:\el_6_1.ics', uefa.EUROPA_LEAGUE, 6, 1)
+#uefa.update_score(r'Q:\lc_6_2.ics', uefa.CHAMPIONS_LEAGUE, 6, None)
