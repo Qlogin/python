@@ -8,6 +8,8 @@ Created on Fri Jul 24 13:56:12 2015
 import re
 import itertools
 
+xrange = range
+
 ###############################################################################
 
 def PermutationStep(num):
@@ -770,7 +772,7 @@ def SolveEnigma(enigma):
     """
     """
     # 1. Match Regular Expression
-    lit   = r'(\w+)'
+    lit   = r'([\w\d]+)'
     space = r'\s*'
     ops   = r'[+\-*]'
     pattern = ('A o A = A').replace('A', lit).replace('o', ops).replace(' ', space)
@@ -785,7 +787,9 @@ def SolveEnigma(enigma):
     for i in range(1, 4):
         var.update(m.group(i))
         first.update(m.group(i)[0])
-    var = list(var)
+    digits = set('0123456789')
+    unused = digits - var & digits
+    var = list(var - digits)
 
     N = len(var)
     if N > 10:
@@ -800,7 +804,7 @@ def SolveEnigma(enigma):
             solution = solution.replace(letter, value)
         return solution if eval(solution) == True else None
 
-    for x in itertools.permutations(map(str, xrange(0, 10)), N):
+    for x in itertools.permutations(unused, N):
         solution = _check(x)
         if solution:
             yield solution.replace('==', '=')
